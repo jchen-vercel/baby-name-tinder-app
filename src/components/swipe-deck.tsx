@@ -1,8 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  animate,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+  type PanInfo,
+} from "framer-motion";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { flushSync } from "react-dom";
 
 import { SpotlightSurface } from "@/components/spotlight-surface";
+
+/** Drag distance ( px ) past this on release counts as a swipe. */
+const SWIPE_OFFSET_PX = 100;
+/** Fast horizontal flick ( px/s ) can complete a swipe before the offset threshold. */
+const SWIPE_VELOCITY_PX_S = 520;
+
+type SwipeDirection = "like" | "pass";
 
 type SwipeDeckName = {
   id: string;
@@ -19,6 +40,28 @@ type SwipeResponse = {
   error?: string;
 };
 
+/** Shared card chrome so the front, under-card, and exit clone keep the same silhouette. */
+const CARD_SHELL_CLASS =
+  "relative z-10 flex min-h-[320px] w-full flex-col rounded-2xl border border-white/[0.1] bg-[linear-gradient(168deg,#191923_0%,#121218_42%,#0c0c10_100%)] p-8 shadow-[0_10px_44px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.07),inset_0_1px_0_0_rgba(255,255,255,0.08)] sm:min-h-[340px]";
+
+const CARD_FRONT_CLASS = `${CARD_SHELL_CLASS} cursor-grab touch-none transition-[box-shadow] duration-300 [transition-timing-function:var(--ease-expo-out)] active:cursor-grabbing hover:shadow-[0_14px_48px_rgba(0,0,0,0.58),0_0_0_1px_rgba(255,255,255,0.1),0_0_80px_rgba(94,106,210,0.08),inset_0_1px_0_0_rgba(255,255,255,0.1)]`;
+
+/** Same layout as the front; only depth cue is slight dimming (no inset/scale — avoids the “pop” when promoted). */
+const CARD_UNDER_CLASS = `${CARD_SHELL_CLASS} brightness-[0.97]`;
+
+type ExitFlight = {
+  key: string;
+  name: SwipeDeckName;
+  direction: SwipeDirection;
+  /** Motion value of the real card when a drag committed (button commits use 0). */
+  initialX: number;
+};
+
+function initialRotateFromDragX(x: number) {
+  const clamped = Math.max(-280, Math.min(280, x));
+  return (clamped / 280) * 17;
+}
+
 function NameCardBody({ name }: { name: SwipeDeckName }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -32,7 +75,6 @@ function NameCardBody({ name }: { name: SwipeDeckName }) {
           </span>
         ) : null}
       </div>
-      {/* Flow from the top — avoids the huge “void” caused by h-full + justify-center */}
       <div className="flex min-h-0 flex-1 flex-col items-center justify-start gap-5 pb-5 pt-10 text-center">
         <h2 className="text-gradient-display text-5xl font-semibold tracking-tight drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)] md:text-6xl">
           {name.name}
@@ -48,7 +90,15 @@ function NameCardBody({ name }: { name: SwipeDeckName }) {
   );
 }
 
-/** Two static layers behind the front card — same bottom edge, narrow inset, ~10px peek at top. */
+function DeckThirdPeek() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-x-[26px] bottom-0 top-0 z-[6] rounded-2xl border border-white/[0.05] bg-[#0c0c0d] opacity-[0.92] shadow-[var(--shadow-card)]"
+    />
+  );
+}
+
 function DeckStackBackLayers() {
   return (
     <>
@@ -64,6 +114,174 @@ function DeckStackBackLayers() {
   );
 }
 
+/** Next name in the stack — full width, same shell as front (no narrower inset / scale animation). */
+function DeckStackNextCard({ name }: { name: SwipeDeckName }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 bottom-0 top-0 z-[8] flex flex-col"
+    >
+      <div className="mt-2.5 min-h-0 flex-1">
+        <SpotlightSurface className={CARD_UNDER_CLASS}>
+          <NameCardBody name={name} />
+        </SpotlightSurface>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Cloned card that keeps flying after the real deck has already advanced — allows instant
+ * interaction with the next name while this finishes visually.
+ */
+function FlyingExitCard({
+  name,
+  direction,
+  initialX,
+  onDone,
+}: {
+  name: SwipeDeckName;
+  direction: SwipeDirection;
+  initialX: number;
+  onDone: () => void;
+}) {
+  const prefersReducedMotion = useReducedMotion();
+
+  const springExit = useMemo(
+    () =>
+      prefersReducedMotion
+        ? {
+            type: "tween" as const,
+            duration: 0.32,
+            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+          }
+        : {
+            type: "spring" as const,
+            stiffness: 96,
+            damping: 22,
+            mass: 0.92,
+            restDelta: 0.8,
+          },
+    [prefersReducedMotion],
+  );
+
+  const vw =
+    typeof window !== "undefined" ? window.innerWidth : 420;
+  const targetX = direction === "like" ? vw * 1.45 : -vw * 1.45;
+  const targetRot = direction === "like" ? 16 : -16;
+  const startRot = initialRotateFromDragX(initialX);
+
+  return (
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-[50] flex flex-col"
+      initial={{ x: initialX, rotate: startRot }}
+      animate={{ x: targetX, rotate: targetRot }}
+      transition={springExit}
+      onAnimationComplete={onDone}
+      style={{ transformOrigin: "50% 50%" }}
+    >
+      <div className="relative mt-2.5 min-h-0 w-full flex-1">
+        <SpotlightSurface className={CARD_FRONT_CLASS}>
+          <NameCardBody name={name} />
+        </SpotlightSurface>
+      </div>
+    </motion.div>
+  );
+}
+
+function SwipeableFrontCard({
+  name,
+  onCommittedSwipe,
+}: {
+  name: SwipeDeckName;
+  /** Invoked as soon as a swipe counts — parent advances deck + spawns exit clone. */
+  onCommittedSwipe: (direction: SwipeDirection, dragX: number) => void;
+}) {
+  const x = useMotionValue(0);
+  const prefersReducedMotion = useReducedMotion();
+
+  const rotate = useTransform(x, [-280, 0, 280], [-17, 0, 17]);
+  const scale = useTransform(x, [-200, 0, 200], [0.985, 1, 0.985]);
+
+  const likeStampOpacity = useTransform(
+    x,
+    [0, SWIPE_OFFSET_PX * 1.25],
+    [0, 1],
+    { clamp: true },
+  );
+  const nopeStampOpacity = useTransform(
+    x,
+    [-SWIPE_OFFSET_PX * 1.25, 0],
+    [1, 0],
+    { clamp: true },
+  );
+
+  const springReturn = useMemo(
+    () =>
+      prefersReducedMotion
+        ? { type: "tween" as const, duration: 0.15, ease: "easeOut" as const }
+        : {
+            type: "spring" as const,
+            stiffness: 400,
+            damping: 34,
+            mass: 0.82,
+          },
+    [prefersReducedMotion],
+  );
+
+  const onDragEnd = useCallback(
+    async (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      const ox = info.offset.x;
+      const vx = info.velocity.x;
+      const at = x.get();
+
+      if (ox > SWIPE_OFFSET_PX || vx > SWIPE_VELOCITY_PX_S) {
+        onCommittedSwipe("like", at);
+        return;
+      }
+      if (ox < -SWIPE_OFFSET_PX || vx < -SWIPE_VELOCITY_PX_S) {
+        onCommittedSwipe("pass", at);
+        return;
+      }
+
+      await animate(x, 0, springReturn);
+    },
+    [onCommittedSwipe, springReturn, x],
+  );
+
+  return (
+    <motion.div
+      className="relative z-10 mt-2.5 w-full"
+      style={{ x, rotate, scale }}
+      drag="x"
+      dragDirectionLock
+      dragMomentum={false}
+      dragElastic={0.06}
+      onDragEnd={onDragEnd}
+      whileTap={{ cursor: "grabbing" }}
+    >
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute left-4 top-1/2 z-20 -translate-y-1/2 rounded-lg border-4 border-red-400 px-3 py-2 text-2xl font-black uppercase italic tracking-tight text-red-400/95 shadow-[0_0_24px_rgba(0,0,0,0.5)] [transform:rotate(-12deg)]"
+        style={{ opacity: nopeStampOpacity }}
+      >
+        Nope
+      </motion.div>
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-lg border-4 border-emerald-400 px-3 py-2 text-2xl font-black uppercase italic tracking-tight text-emerald-400/95 shadow-[0_0_24px_rgba(0,0,0,0.5)] [transform:rotate(12deg)]"
+        style={{ opacity: likeStampOpacity }}
+      >
+        Like
+      </motion.div>
+      <SpotlightSurface className={CARD_FRONT_CLASS}>
+        <NameCardBody name={name} />
+      </SpotlightSurface>
+    </motion.div>
+  );
+}
+
 export function SwipeDeck({
   coupleId,
   initialNames,
@@ -75,6 +293,8 @@ export function SwipeDeck({
   const [matchName, setMatchName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [exitFlights, setExitFlights] = useState<ExitFlight[]>([]);
+
   const currentName = names[0];
 
   const remainingLabel =
@@ -101,26 +321,21 @@ export function SwipeDeck({
     }
 
     setNames((existingNames) => {
-      const existingIds = new Set(existingNames.map((name) => name.id));
+      const existingIds = new Set(existingNames.map((n) => n.id));
       const freshNames = (payload.names ?? []).filter(
-        (name) => !existingIds.has(name.id),
+        (n) => !existingIds.has(n.id),
       );
 
       return [...existingNames, ...freshNames];
     });
   }, [isLoadingMore]);
 
-  const swipe = useCallback(
-    async (direction: "like" | "pass") => {
-      if (!currentName) {
-        return;
-      }
-
-      const swipedName = currentName;
-      setError(null);
-      setMatchName(null);
-      setNames((existingNames) => existingNames.slice(1));
-
+  const persistSwipeInBackground = useCallback(
+    async (
+      swipedName: SwipeDeckName,
+      direction: SwipeDirection,
+      deckLengthBeforeSwipe: number,
+    ) => {
       const response = await fetch("/api/swipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -143,21 +358,72 @@ export function SwipeDeck({
         setMatchName(payload.name ?? swipedName.name);
       }
 
-      if (names.length <= 4) {
+      if (deckLengthBeforeSwipe <= 4) {
         void loadMore();
       }
     },
-    [coupleId, currentName, loadMore, names.length],
+    [coupleId, loadMore],
   );
+
+  /**
+   * Advances the deck immediately and plays the outgoing swipe on a decorative clone.
+   * The real front card is the next name right away — no waiting for the spring to settle.
+   */
+  const commitSwipeNow = useCallback(
+    (direction: SwipeDirection, dragX: number) => {
+      let swiped: SwipeDeckName | undefined;
+      let deckLen = 0;
+
+      flushSync(() => {
+        setError(null);
+        setMatchName(null);
+        setNames((existingNames) => {
+          swiped = existingNames[0];
+          deckLen = existingNames.length;
+          if (!swiped) {
+            return existingNames;
+          }
+          return existingNames.slice(1);
+        });
+      });
+
+      if (!swiped) {
+        return;
+      }
+
+      const removed = swiped;
+      const key = `${removed.id}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      setExitFlights((f) => [
+        ...f,
+        { key, name: removed, direction, initialX: dragX },
+      ]);
+      void persistSwipeInBackground(removed, direction, deckLen);
+    },
+    [persistSwipeInBackground],
+  );
+
+  const swipe = useCallback(
+    (direction: SwipeDirection) => {
+      commitSwipeNow(direction, 0);
+    },
+    [commitSwipeNow],
+  );
+
+  const removeExitFlight = useCallback((key: string) => {
+    setExitFlights((f) => f.filter((e) => e.key !== key));
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
+      if (event.repeat) {
+        return;
+      }
       if (event.key === "ArrowLeft") {
-        void swipe("pass");
+        swipe("pass");
       }
 
       if (event.key === "ArrowRight") {
-        void swipe("like");
+        swipe("like");
       }
     }
 
@@ -165,8 +431,7 @@ export function SwipeDeck({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [swipe]);
 
-  const frontCardClass =
-    "relative z-10 mt-2.5 flex min-h-[320px] w-full flex-col rounded-2xl border border-white/[0.1] bg-[linear-gradient(168deg,#191923_0%,#121218_42%,#0c0c10_100%)] p-8 shadow-[0_10px_44px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.07),inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-[transform,box-shadow] duration-300 [transition-timing-function:var(--ease-expo-out)] hover:shadow-[0_14px_48px_rgba(0,0,0,0.58),0_0_0_1px_rgba(255,255,255,0.1),0_0_80px_rgba(94,106,210,0.08),inset_0_1px_0_0_rgba(255,255,255,0.1)] sm:min-h-[340px]";
+  const actionsLocked = !currentName;
 
   return (
     <section className="mx-auto w-full max-w-md">
@@ -191,13 +456,29 @@ export function SwipeDeck({
         </div>
       ) : null}
 
-      <div className="relative min-h-[340px] w-full overflow-hidden rounded-2xl sm:min-h-[360px]">
-        {names.length > 0 ? (
+      <div className="relative min-h-[340px] w-full select-none overflow-hidden rounded-2xl sm:min-h-[360px]">
+        {currentName ? (
           <>
-            <DeckStackBackLayers />
-            <SpotlightSurface key={names[0].id} className={frontCardClass}>
-              <NameCardBody name={names[0]} />
-            </SpotlightSurface>
+            {names.length >= 3 ? <DeckThirdPeek /> : null}
+            {names[1] ? (
+              <DeckStackNextCard key={names[1].id} name={names[1]} />
+            ) : (
+              <DeckStackBackLayers />
+            )}
+            <SwipeableFrontCard
+              key={currentName.id}
+              name={currentName}
+              onCommittedSwipe={commitSwipeNow}
+            />
+            {exitFlights.map((flight) => (
+              <FlyingExitCard
+                key={flight.key}
+                name={flight.name}
+                direction={flight.direction}
+                initialX={flight.initialX}
+                onDone={() => removeExitFlight(flight.key)}
+              />
+            ))}
           </>
         ) : null}
 
@@ -225,7 +506,7 @@ export function SwipeDeck({
         <button
           type="button"
           onClick={() => swipe("pass")}
-          disabled={!currentName}
+          disabled={actionsLocked}
           className="btn-secondary focus-ring-accent rounded-lg px-6 py-4 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-45"
         >
           Pass
@@ -233,7 +514,7 @@ export function SwipeDeck({
         <button
           type="button"
           onClick={() => swipe("like")}
-          disabled={!currentName}
+          disabled={actionsLocked}
           className="btn-primary focus-ring-accent rounded-lg px-6 py-4 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-45"
         >
           Like
