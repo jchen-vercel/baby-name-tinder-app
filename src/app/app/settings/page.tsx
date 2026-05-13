@@ -20,15 +20,15 @@ export default async function SettingsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
-      <div className="mb-8">
-        <p className="text-sm font-bold uppercase tracking-[0.25em] text-rose-500">
+    <main className="mx-auto max-w-5xl px-6 py-10 md:py-14">
+      <div className="mb-10">
+        <p className="font-mono text-xs font-medium uppercase tracking-widest text-accent">
           Account settings
         </p>
-        <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950">
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
           Preferences
         </h1>
-        <p className="mt-3 max-w-2xl text-slate-500">
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground-muted md:text-base">
           Choose which names appear in your swipe deck. This setting only
           affects your account in the current couple.
         </p>

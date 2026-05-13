@@ -41,12 +41,12 @@ export function RemoveLikeButton({
         type="button"
         onClick={removeLike}
         disabled={isRemoving}
-        className="w-full rounded-full border border-rose-200 bg-white px-4 py-3 text-sm font-black text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+        className="focus-ring-accent w-full rounded-lg border border-border-default bg-transparent px-4 py-3 text-sm font-semibold text-foreground-muted transition-colors [transition-timing-function:var(--ease-expo-out)] hover:border-border-hover hover:bg-surface hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45"
       >
         {isRemoving ? "Removing..." : "Remove from likes"}
       </button>
       {error ? (
-        <p className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <p className="mt-3 rounded-2xl border border-red-500/35 bg-red-950/45 px-4 py-3 text-sm font-medium text-red-100">
           {error}
         </p>
       ) : null}

@@ -71,20 +71,20 @@ export function NamePreferenceForm({
   return (
     <form
       onSubmit={savePreference}
-      className="rounded-[2rem] bg-white p-6 shadow-sm shadow-rose-100"
+      className="surface-card surface-card-glass rounded-2xl p-6 md:p-8"
     >
       <fieldset>
-        <legend className="text-sm font-bold uppercase tracking-[0.2em] text-rose-500">
+        <legend className="font-mono text-xs font-medium uppercase tracking-widest text-accent">
           Name gender preference
         </legend>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {preferenceOptions.map((option) => (
             <label
               key={option.value}
-              className={`cursor-pointer rounded-3xl border p-5 transition ${
+              className={`cursor-pointer rounded-2xl border p-5 transition-colors [transition-timing-function:var(--ease-expo-out)] ${
                 namePreference === option.value
-                  ? "border-rose-500 bg-rose-50"
-                  : "border-slate-200 bg-white hover:border-rose-200"
+                  ? "border-border-accent bg-accent/10 shadow-[0_0_24px_rgba(94,106,210,0.12)]"
+                  : "border-border-default bg-surface/50 hover:border-border-hover"
               }`}
             >
               <input
@@ -95,10 +95,10 @@ export function NamePreferenceForm({
                 onChange={() => setNamePreference(option.value)}
                 className="sr-only"
               />
-              <span className="text-lg font-black text-slate-950">
+              <span className="text-lg font-semibold text-foreground">
                 {option.title}
               </span>
-              <span className="mt-2 block text-sm leading-6 text-slate-500">
+              <span className="mt-2 block text-sm leading-relaxed text-foreground-muted">
                 {option.description}
               </span>
             </label>
@@ -107,13 +107,13 @@ export function NamePreferenceForm({
       </fieldset>
 
       {status ? (
-        <p className="mt-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+        <p className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm font-medium text-emerald-100">
           {status}
         </p>
       ) : null}
 
       {error ? (
-        <p className="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <p className="mt-6 rounded-2xl border border-red-500/35 bg-red-950/45 px-4 py-3 text-sm font-medium text-red-100">
           {error}
         </p>
       ) : null}
@@ -121,7 +121,7 @@ export function NamePreferenceForm({
       <button
         type="submit"
         disabled={isSaving || namePreference === initialPreference}
-        className="mt-8 rounded-full bg-rose-600 px-6 py-4 font-black text-white shadow-lg shadow-rose-200 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
+        className="btn-primary focus-ring-accent mt-8 rounded-lg px-6 py-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-45"
       >
         {isSaving ? "Saving..." : "Save preference"}
       </button>

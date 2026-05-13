@@ -30,34 +30,34 @@ export default async function LikesPage() {
   );
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <main className="mx-auto max-w-5xl px-6 py-10 md:py-14">
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.25em] text-rose-500">
+          <p className="font-mono text-xs font-medium uppercase tracking-widest text-accent">
             Your shortlist
           </p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Liked names
           </h1>
-          <p className="mt-3 max-w-2xl text-slate-500">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground-muted md:text-base">
             These are the names you liked. Remove any name to put it back into
             your swipe deck and clear it from shared matches.
           </p>
         </div>
         <Link
           href="/app"
-          className="rounded-full bg-slate-950 px-5 py-3 text-center font-bold text-white transition hover:bg-slate-800"
+          className="btn-primary focus-ring-accent inline-flex justify-center rounded-lg px-5 py-3 text-center text-sm font-semibold"
         >
           Back to swiping
         </Link>
       </div>
 
       {likedNames.length === 0 ? (
-        <div className="mt-10 rounded-[2rem] border border-dashed border-rose-200 bg-white/70 p-10 text-center">
-          <h2 className="text-2xl font-black text-slate-950">
+        <div className="surface-card surface-card-glass mt-10 rounded-2xl border border-dashed border-white/15 p-10 text-center">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
             No liked names yet.
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-slate-500">
+          <p className="mx-auto mt-3 max-w-xl text-foreground-muted">
             Names you like from the swipe deck will appear here.
           </p>
         </div>
@@ -66,21 +66,23 @@ export default async function LikesPage() {
           {likedNames.map((likedName) => (
             <article
               key={likedName.id}
-              className="rounded-[2rem] bg-white p-6 shadow-sm shadow-rose-100"
+              className="surface-card surface-card-glass rounded-2xl p-6 transition-transform duration-300 [transition-timing-function:var(--ease-expo-out)] hover:-translate-y-1"
             >
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.2em] text-rose-400">
+              <div className="flex items-center justify-between text-xs font-mono font-medium uppercase tracking-widest text-accent">
                 <span>{likedName.gender}</span>
                 {likedName.popularityRank ? (
-                  <span>#{likedName.popularityRank}</span>
+                  <span className="text-foreground-muted">
+                    #{likedName.popularityRank}
+                  </span>
                 ) : null}
               </div>
-              <h2 className="mt-8 text-4xl font-black text-slate-950">
+              <h2 className="text-gradient-display mt-8 text-3xl font-semibold tracking-tight md:text-4xl">
                 {likedName.name}
               </h2>
-              <p className="mt-3 font-semibold text-slate-500">
+              <p className="mt-3 font-medium text-foreground-muted">
                 {likedName.origin ?? "Origin unknown"}
               </p>
-              <p className="mt-4 text-sm leading-6 text-slate-500">
+              <p className="mt-4 text-sm leading-relaxed text-foreground-muted">
                 {likedName.meaning ?? "A name you wanted to keep around."}
               </p>
               <RemoveLikeButton

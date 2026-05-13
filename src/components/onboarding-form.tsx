@@ -48,18 +48,18 @@ export function OnboardingForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mx-auto w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-xl shadow-rose-100"
+      className="surface-card surface-card-glass mx-auto w-full max-w-xl rounded-2xl p-6 md:p-8"
     >
-      <div className="grid grid-cols-2 gap-2 rounded-full bg-rose-50 p-1">
+      <div className="grid grid-cols-2 gap-2 rounded-lg border border-white/[0.08] bg-surface p-1">
         {(["create", "join"] as const).map((option) => (
           <button
             type="button"
             key={option}
             onClick={() => setMode(option)}
-            className={`rounded-full px-4 py-3 text-sm font-bold capitalize transition ${
+            className={`focus-ring-accent rounded-md px-4 py-3 text-sm font-semibold capitalize transition-colors [transition-timing-function:var(--ease-expo-out)] ${
               mode === option
-                ? "bg-white text-rose-700 shadow-sm"
-                : "text-slate-500 hover:text-slate-900"
+                ? "bg-white/[0.08] text-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
+                : "text-foreground-muted hover:text-foreground"
             }`}
           >
             {option} couple
@@ -68,17 +68,17 @@ export function OnboardingForm() {
       </div>
 
       <fieldset className="mt-8">
-        <legend className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
+        <legend className="font-mono text-xs font-medium uppercase tracking-widest text-foreground-subtle">
           Your role
         </legend>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {(["mother", "father"] as const).map((option) => (
             <label
               key={option}
-              className={`cursor-pointer rounded-3xl border p-5 transition ${
+              className={`cursor-pointer rounded-2xl border p-5 transition-colors [transition-timing-function:var(--ease-expo-out)] ${
                 role === option
-                  ? "border-rose-500 bg-rose-50"
-                  : "border-slate-200 bg-white hover:border-rose-200"
+                  ? "border-border-accent bg-accent/10 shadow-[0_0_24px_rgba(94,106,210,0.12)]"
+                  : "border-border-default bg-surface/50 hover:border-border-hover"
               }`}
             >
               <input
@@ -89,10 +89,10 @@ export function OnboardingForm() {
                 onChange={() => setRole(option)}
                 className="sr-only"
               />
-              <span className="text-lg font-black capitalize text-slate-950">
+              <span className="text-lg font-semibold capitalize text-foreground">
                 {option}
               </span>
-              <span className="mt-2 block text-sm leading-6 text-slate-500">
+              <span className="mt-2 block text-sm leading-relaxed text-foreground-muted">
                 You will swipe privately and only shared likes become matches.
               </span>
             </label>
@@ -101,17 +101,17 @@ export function OnboardingForm() {
       </fieldset>
 
       <fieldset className="mt-8">
-        <legend className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
+        <legend className="font-mono text-xs font-medium uppercase tracking-widest text-foreground-subtle">
           Show me
         </legend>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {(["girl", "boy", "both"] as const).map((option) => (
             <label
               key={option}
-              className={`cursor-pointer rounded-3xl border p-5 transition ${
+              className={`cursor-pointer rounded-2xl border p-5 transition-colors [transition-timing-function:var(--ease-expo-out)] ${
                 namePreference === option
-                  ? "border-rose-500 bg-rose-50"
-                  : "border-slate-200 bg-white hover:border-rose-200"
+                  ? "border-border-accent bg-accent/10 shadow-[0_0_24px_rgba(94,106,210,0.12)]"
+                  : "border-border-default bg-surface/50 hover:border-border-hover"
               }`}
             >
               <input
@@ -122,10 +122,10 @@ export function OnboardingForm() {
                 onChange={() => setNamePreference(option)}
                 className="sr-only"
               />
-              <span className="text-lg font-black capitalize text-slate-950">
+              <span className="text-lg font-semibold capitalize text-foreground">
                 {option === "both" ? "Both" : `${option} names`}
               </span>
-              <span className="mt-2 block text-sm leading-6 text-slate-500">
+              <span className="mt-2 block text-sm leading-relaxed text-foreground-muted">
                 {option === "both"
                   ? "Your deck will include boy and girl names."
                   : `Your deck will only show ${option} names.`}
@@ -137,21 +137,21 @@ export function OnboardingForm() {
 
       {mode === "join" ? (
         <label className="mt-6 block">
-          <span className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
+          <span className="font-mono text-xs font-medium uppercase tracking-widest text-foreground-subtle">
             Invite code
           </span>
           <input
             value={inviteCode}
             onChange={(event) => setInviteCode(event.target.value)}
             placeholder="ABC123"
-            className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-bold uppercase tracking-[0.2em] outline-none transition focus:border-rose-500"
+            className="input-dark focus-ring-accent mt-3 w-full px-4 py-4 text-lg font-semibold uppercase tracking-[0.14em]"
             required
           />
         </label>
       ) : null}
 
       {error ? (
-        <p className="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <p className="mt-6 rounded-2xl border border-red-500/35 bg-red-950/45 px-4 py-3 text-sm font-medium text-red-100">
           {error}
         </p>
       ) : null}
@@ -159,7 +159,7 @@ export function OnboardingForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="mt-8 w-full rounded-full bg-rose-600 px-6 py-4 font-black text-white shadow-lg shadow-rose-200 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
+        className="btn-primary focus-ring-accent mt-8 w-full rounded-lg px-6 py-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-45"
       >
         {isSubmitting
           ? "Saving..."
