@@ -113,10 +113,6 @@ export default function Home() {
         <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
           Built for two-player momentum
         </h2>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-foreground-muted">
-          Layered glass, soft glow, and tight micro-interactions keep the
-          focus on the names — not the chrome.
-        </p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-6 lg:auto-rows-[minmax(168px,auto)]">
           <SpotlightSurface className="surface-card surface-card-glass rounded-2xl p-8 lg:col-span-4 lg:row-span-2">
