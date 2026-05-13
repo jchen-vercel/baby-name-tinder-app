@@ -1,0 +1,1 @@
+ALTER TYPE "public"."name_preference" ADD VALUE 'both';
