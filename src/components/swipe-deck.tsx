@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { SpotlightSurface } from "@/components/spotlight-surface";
+
 type SwipeDeckName = {
   id: string;
   name: string;
@@ -16,6 +18,51 @@ type SwipeResponse = {
   name?: string;
   error?: string;
 };
+
+function NameCardBody({ name }: { name: SwipeDeckName }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center justify-between text-xs font-mono font-medium uppercase tracking-widest text-indigo-200/95">
+        <span className="drop-shadow-[0_1px_8px_rgba(0,0,0,0.65)]">
+          {name.gender}
+        </span>
+        {name.popularityRank ? (
+          <span className="text-[#c5c9d4] drop-shadow-[0_1px_6px_rgba(0,0,0,0.6)]">
+            #{name.popularityRank}
+          </span>
+        ) : null}
+      </div>
+      {/* Flow from the top — avoids the huge “void” caused by h-full + justify-center */}
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-start gap-5 pb-5 pt-10 text-center">
+        <h2 className="text-gradient-display text-5xl font-semibold tracking-tight drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)] md:text-6xl">
+          {name.name}
+        </h2>
+        <p className="text-lg font-medium text-[#d8dce6]">
+          {name.origin ?? "Origin unknown"}
+        </p>
+        <p className="max-w-xs text-base leading-relaxed text-[#b4bac8]">
+          {name.meaning ?? "A beautiful name to consider together."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Two static layers behind the front card — same bottom edge, narrow inset, ~10px peek at top. */
+function DeckStackBackLayers() {
+  return (
+    <>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-[14px] bottom-0 top-0 z-[7] rounded-2xl border border-white/[0.06] bg-[linear-gradient(180deg,#15151c_0%,#0a0a0d_100%)] shadow-[var(--shadow-card)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-[26px] bottom-0 top-0 z-[6] rounded-2xl border border-white/[0.05] bg-[#0c0c0d] opacity-[0.92] shadow-[var(--shadow-card)]"
+      />
+    </>
+  );
+}
 
 export function SwipeDeck({
   coupleId,
@@ -118,66 +165,55 @@ export function SwipeDeck({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [swipe]);
 
+  const frontCardClass =
+    "relative z-10 mt-2.5 flex min-h-[320px] w-full flex-col rounded-2xl border border-white/[0.1] bg-[linear-gradient(168deg,#191923_0%,#121218_42%,#0c0c10_100%)] p-8 shadow-[0_10px_44px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.07),inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-[transform,box-shadow] duration-300 [transition-timing-function:var(--ease-expo-out)] hover:shadow-[0_14px_48px_rgba(0,0,0,0.58),0_0_0_1px_rgba(255,255,255,0.1),0_0_80px_rgba(94,106,210,0.08),inset_0_1px_0_0_rgba(255,255,255,0.1)] sm:min-h-[340px]";
+
   return (
     <section className="mx-auto w-full max-w-md">
-      <div className="mb-4 flex items-center justify-between px-2 text-sm font-bold text-slate-500">
-        <span>{remainingLabel}</span>
-        <span>Use left/right keys</span>
+      <div className="mb-4 flex items-center justify-between px-2 text-sm font-medium text-[#aeb3be]">
+        <span className="drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]">
+          {remainingLabel}
+        </span>
+        <span className="font-mono text-[11px] uppercase tracking-widest text-[#9ea4b0]">
+          ← Pass · Like →
+        </span>
       </div>
 
       {matchName ? (
-        <div className="mb-4 rounded-3xl bg-rose-600 px-5 py-4 text-center font-black text-white shadow-lg shadow-rose-200">
+        <div className="mb-4 rounded-2xl border border-border-accent bg-accent/10 px-5 py-4 text-center font-semibold text-foreground shadow-[0_0_40px_rgba(94,106,210,0.12)]">
           Match! You both liked {matchName}.
         </div>
       ) : null}
 
       {error ? (
-        <div className="mb-4 rounded-3xl bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
+        <div className="mb-4 rounded-2xl border border-red-500/35 bg-red-950/45 px-5 py-4 text-sm font-medium text-red-100">
           {error}
         </div>
       ) : null}
 
-      <div className="relative h-[520px]">
-        {names.slice(0, 3).map((name, index) => (
-          <article
-            key={name.id}
-            className="absolute inset-0 rounded-[2rem] border border-rose-100 bg-white p-8 shadow-2xl shadow-rose-100 transition"
-            style={{
-              transform: `translateY(${index * 14}px) scale(${1 - index * 0.04})`,
-              zIndex: 10 - index,
-            }}
-          >
-            <div className="flex items-center justify-between text-sm font-bold uppercase tracking-[0.2em] text-rose-400">
-              <span>{name.gender}</span>
-              {name.popularityRank ? <span>#{name.popularityRank}</span> : null}
-            </div>
-            <div className="flex h-full flex-col items-center justify-center pb-16 text-center">
-              <h2 className="text-6xl font-black tracking-tight text-slate-950">
-                {name.name}
-              </h2>
-              <p className="mt-5 text-lg font-semibold text-slate-500">
-                {name.origin ?? "Origin unknown"}
-              </p>
-              <p className="mt-4 max-w-xs text-base leading-7 text-slate-500">
-                {name.meaning ?? "A beautiful name to consider together."}
-              </p>
-            </div>
-          </article>
-        ))}
+      <div className="relative min-h-[340px] w-full overflow-hidden rounded-2xl sm:min-h-[360px]">
+        {names.length > 0 ? (
+          <>
+            <DeckStackBackLayers />
+            <SpotlightSurface key={names[0].id} className={frontCardClass}>
+              <NameCardBody name={names[0]} />
+            </SpotlightSurface>
+          </>
+        ) : null}
 
         {!currentName ? (
-          <div className="flex h-full flex-col items-center justify-center rounded-[2rem] border border-dashed border-rose-200 bg-white/70 p-8 text-center">
-            <h2 className="text-3xl font-black text-slate-950">
+          <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-surface/60 p-8 text-center backdrop-blur-sm sm:min-h-[340px]">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
               You reached the end.
             </h2>
-            <p className="mt-3 text-slate-500">
+            <p className="mt-3 text-foreground-muted">
               Add more names to the seed dataset and run the seed script to keep
               swiping.
             </p>
             <button
               type="button"
               onClick={loadMore}
-              className="mt-6 rounded-full bg-slate-950 px-5 py-3 font-bold text-white"
+              className="btn-primary focus-ring-accent mt-6 rounded-lg px-5 py-3 text-sm font-semibold"
             >
               Check for more
             </button>
@@ -190,7 +226,7 @@ export function SwipeDeck({
           type="button"
           onClick={() => swipe("pass")}
           disabled={!currentName}
-          className="rounded-full bg-white px-6 py-4 text-lg font-black text-slate-700 shadow-lg shadow-rose-100 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-secondary focus-ring-accent rounded-lg px-6 py-4 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-45"
         >
           Pass
         </button>
@@ -198,7 +234,7 @@ export function SwipeDeck({
           type="button"
           onClick={() => swipe("like")}
           disabled={!currentName}
-          className="rounded-full bg-rose-600 px-6 py-4 text-lg font-black text-white shadow-lg shadow-rose-200 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-primary focus-ring-accent rounded-lg px-6 py-4 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-45"
         >
           Like
         </button>
