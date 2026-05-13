@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
+    "db:enrich": "tsx scripts/enrich-names.ts",
     "db:seed": "dotenv -e .env.local -- tsx scripts/seed-names.ts",
     "test": "vitest run"
   },
@@ -34,6 +35,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",
+    "usbabynames": "^2.2.1",
     "vitest": "^4.1.6"
   }
 }
