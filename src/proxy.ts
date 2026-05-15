@@ -5,6 +5,7 @@ const isProtectedRoute = createRouteMatcher([
   "/app(.*)",
   "/api/couples(.*)",
   "/api/likes(.*)",
+  "/api/name-chat(.*)",
   "/api/preferences(.*)",
   "/api/swipes(.*)",
 ]);
