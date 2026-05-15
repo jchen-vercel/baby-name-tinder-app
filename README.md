@@ -9,13 +9,17 @@ names they both like.
    ```bash
    npm install
    ```
-2. Copy `.env.example` to `.env.local` and fill in Neon and Clerk values.
-3. Push the database schema and seed names:
+2. Copy `.env.example` to `.env.local` (if present) and fill in Neon and Clerk values.
+3. **AI chat (Vercel AI Gateway):** Enable AI Gateway for your Vercel project, then either:
+   - run `vercel env pull .env.local` so `VERCEL_OIDC_TOKEN` is available locally, or
+   - set `AI_GATEWAY_API_KEY` in `.env.local` for a static gateway key (e.g. CI).
+   Without one of these, the name assistant API route will fail when calling the model.
+4. Push the database schema and seed names:
    ```bash
    npm run db:push
    npm run db:seed
    ```
-4. Start the app:
+5. Start the app:
    ```bash
    npm run dev
    ```

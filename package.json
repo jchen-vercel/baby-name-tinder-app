@@ -14,8 +14,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.184",
     "@clerk/nextjs": "^7.3.3",
     "@neondatabase/serverless": "^1.1.0",
+    "ai": "^6.0.182",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.38.0",
