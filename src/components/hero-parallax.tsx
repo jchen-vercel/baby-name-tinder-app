@@ -9,7 +9,7 @@ type HeroParallaxProps = {
 
 /**
  * Hero copy fades, scales, and drifts slightly on scroll (first ~50% viewport height).
- * Respects prefers-reduced-motion by skipping transform updates.
+ * Skips transform updates for prefers-reduced-motion and coarse pointers (touch) for reliable tap targets.
  */
 export function HeroParallax({ children, className = "" }: HeroParallaxProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -23,7 +23,8 @@ export function HeroParallax({ children, className = "" }: HeroParallaxProps) {
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    if (reduceMotion) {
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    if (reduceMotion || coarsePointer) {
       return;
     }
 
