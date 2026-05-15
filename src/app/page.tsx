@@ -34,9 +34,14 @@ export default function Home() {
           </Show>
           <Show when="signed-out">
             <div className="flex items-center gap-2">
-              <span className="btn-secondary focus-ring-accent inline-flex rounded-lg px-4 py-2 text-sm font-semibold">
-                <SignInButton mode="modal">Sign in</SignInButton>
-              </span>
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  className="btn-secondary focus-ring-accent inline-flex rounded-lg px-4 py-2 text-sm font-semibold"
+                >
+                  Sign in
+                </button>
+              </SignInButton>
             </div>
           </Show>
         </div>
@@ -68,12 +73,22 @@ export default function Home() {
             </Show>
             <Show when="signed-out">
               <>
-                <span className="btn-primary focus-ring-accent inline-flex justify-center rounded-lg px-6 py-3 text-center text-sm font-semibold">
-                  <SignInButton mode="modal">Get started</SignInButton>
-                </span>
-                <span className="btn-secondary focus-ring-accent inline-flex justify-center rounded-lg px-6 py-3 text-center text-sm font-semibold">
-                  <SignUpButton mode="modal">Create account</SignUpButton>
-                </span>
+                <SignInButton mode="modal">
+                  <button
+                    type="button"
+                    className="btn-primary focus-ring-accent inline-flex w-full justify-center rounded-lg px-6 py-3 text-center text-sm font-semibold sm:w-auto"
+                  >
+                    Get started
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button
+                    type="button"
+                    className="btn-secondary focus-ring-accent inline-flex w-full justify-center rounded-lg px-6 py-3 text-center text-sm font-semibold sm:w-auto"
+                  >
+                    Create account
+                  </button>
+                </SignUpButton>
               </>
             </Show>
           </div>
