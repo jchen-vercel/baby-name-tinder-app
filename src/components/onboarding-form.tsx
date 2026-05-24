@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import type { NamePreference, ParentRole } from "@/db/schema";
@@ -9,11 +9,14 @@ type Mode = "create" | "join";
 
 export function OnboardingForm() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("create");
+  const searchParams = useSearchParams();
+  const codeFromUrl = searchParams.get("code")?.trim().toUpperCase() ?? "";
+
+  const [mode, setMode] = useState<Mode>(codeFromUrl ? "join" : "create");
   const [role, setRole] = useState<ParentRole>("mother");
   const [namePreference, setNamePreference] =
     useState<NamePreference>("girl");
-  const [inviteCode, setInviteCode] = useState("");
+  const [inviteCode, setInviteCode] = useState(codeFromUrl);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

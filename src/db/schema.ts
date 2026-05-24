@@ -177,6 +177,38 @@ export const matches = pgTable(
   }),
 );
 
+export const matchRankings = pgTable(
+  "match_rankings",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    coupleId: uuid("couple_id")
+      .notNull()
+      .references(() => couples.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    babyNameId: uuid("baby_name_id")
+      .notNull()
+      .references(() => babyNames.id, { onDelete: "cascade" }),
+    rank: integer("rank").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    uniqueUserRankSlotIdx: uniqueIndex("match_rankings_user_rank_slot_idx").on(
+      table.coupleId,
+      table.userId,
+      table.rank,
+    ),
+    uniqueUserNameIdx: uniqueIndex("match_rankings_user_name_idx").on(
+      table.coupleId,
+      table.userId,
+      table.babyNameId,
+    ),
+  }),
+);
+
 export type BabyName = typeof babyNames.$inferSelect;
 export type Couple = typeof couples.$inferSelect;
 export type CoupleMember = typeof coupleMembers.$inferSelect;

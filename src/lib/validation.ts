@@ -31,3 +31,9 @@ export const likeRequestSchema = z.object({
 export const preferenceRequestSchema = z.object({
   namePreference: namePreferenceSchema,
 });
+
+export const matchRankingRequestSchema = z.object({
+  coupleId: z.uuid(),
+  babyNameId: z.uuid(),
+  rank: z.union([z.literal(1), z.literal(2), z.literal(3), z.null()]),
+});

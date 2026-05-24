@@ -7,6 +7,7 @@ import {
   babyNames,
   coupleMembers,
   couples,
+  matchRankings,
   matches,
   swipes,
   users,
@@ -15,6 +16,7 @@ import {
   type SwipeDirection,
 } from "@/db/schema";
 import { createInviteCode } from "@/lib/invite-codes";
+import { buildRankingSummary, type RankingEntry } from "@/lib/ranking-utils";
 import { shouldCreateMatch } from "@/lib/match-utils";
 
 const deckGenders = {
@@ -22,6 +24,17 @@ const deckGenders = {
   girl: ["girl"],
   both: ["boy", "girl"],
 } as const satisfies Record<NamePreference, ReadonlyArray<"boy" | "girl">>;
+
+async function deleteMatchRankingsForName(coupleId: string, babyNameId: string) {
+  await getDb()
+    .delete(matchRankings)
+    .where(
+      and(
+        eq(matchRankings.coupleId, coupleId),
+        eq(matchRankings.babyNameId, babyNameId),
+      ),
+    );
+}
 
 export async function ensureAppUser(clerkUserId: string) {
   const [appUser] = await getDb()
@@ -222,6 +235,29 @@ export async function getLikedNames(coupleId: string, userId: string) {
     .orderBy(desc(swipes.updatedAt), asc(babyNames.name));
 }
 
+export async function getPassedNames(coupleId: string, userId: string) {
+  return getDb()
+    .select({
+      id: babyNames.id,
+      name: babyNames.name,
+      gender: babyNames.gender,
+      origin: babyNames.origin,
+      meaning: babyNames.meaning,
+      popularityRank: babyNames.popularityRank,
+      passedAt: swipes.updatedAt,
+    })
+    .from(swipes)
+    .innerJoin(babyNames, eq(babyNames.id, swipes.babyNameId))
+    .where(
+      and(
+        eq(swipes.coupleId, coupleId),
+        eq(swipes.userId, userId),
+        eq(swipes.direction, "pass"),
+      ),
+    )
+    .orderBy(desc(swipes.updatedAt), asc(babyNames.name));
+}
+
 export async function removeLikedName({
   coupleId,
   userId,
@@ -268,6 +304,7 @@ export async function removeLikedName({
           eq(matches.babyNameId, babyNameId),
         ),
       );
+    await deleteMatchRankingsForName(coupleId, babyNameId);
   }
 
   return { removed: Boolean(deletedLike) };
@@ -317,6 +354,7 @@ export async function recordSwipe({
           eq(matches.babyNameId, babyNameId),
         ),
       );
+    await deleteMatchRankingsForName(coupleId, babyNameId);
 
     return { matched: false as const };
   }
@@ -369,4 +407,169 @@ export async function getMatchedNames(coupleId: string) {
     .innerJoin(babyNames, eq(babyNames.id, matches.babyNameId))
     .where(eq(matches.coupleId, coupleId))
     .orderBy(desc(matches.createdAt), asc(babyNames.name));
+}
+
+export async function getMatchRankingsForUser(coupleId: string, userId: string) {
+  return getDb()
+    .select({
+      babyNameId: matchRankings.babyNameId,
+      name: babyNames.name,
+      rank: matchRankings.rank,
+    })
+    .from(matchRankings)
+    .innerJoin(babyNames, eq(babyNames.id, matchRankings.babyNameId))
+    .where(
+      and(eq(matchRankings.coupleId, coupleId), eq(matchRankings.userId, userId)),
+    )
+    .orderBy(asc(matchRankings.rank));
+}
+
+export async function getCoupleRankingContext(coupleId: string, userId: string) {
+  const members = await getDb()
+    .select({
+      userId: coupleMembers.userId,
+      role: coupleMembers.role,
+    })
+    .from(coupleMembers)
+    .where(
+      and(eq(coupleMembers.coupleId, coupleId), eq(coupleMembers.isActive, true)),
+    );
+
+  const allRankings = await getDb()
+    .select({
+      userId: matchRankings.userId,
+      babyNameId: matchRankings.babyNameId,
+      name: babyNames.name,
+      rank: matchRankings.rank,
+    })
+    .from(matchRankings)
+    .innerJoin(babyNames, eq(babyNames.id, matchRankings.babyNameId))
+    .innerJoin(
+      matches,
+      and(
+        eq(matches.coupleId, matchRankings.coupleId),
+        eq(matches.babyNameId, matchRankings.babyNameId),
+      ),
+    )
+    .where(eq(matchRankings.coupleId, coupleId))
+    .orderBy(asc(matchRankings.rank));
+
+  const rankingsByUser = new Map<string, RankingEntry[]>();
+  for (const row of allRankings) {
+    const existing = rankingsByUser.get(row.userId) ?? [];
+    existing.push({
+      babyNameId: row.babyNameId,
+      name: row.name,
+      rank: row.rank,
+    });
+    rankingsByUser.set(row.userId, existing);
+  }
+
+  const myRankings = rankingsByUser.get(userId) ?? [];
+  const partner = members.find((member) => member.userId !== userId);
+  const partnerRankings = partner
+    ? (rankingsByUser.get(partner.userId) ?? [])
+    : [];
+
+  const summary = buildRankingSummary({
+    members,
+    rankingsByUser,
+    currentUserId: userId,
+  });
+
+  return {
+    myRankings,
+    partnerRankings,
+    summary,
+    members,
+  };
+}
+
+export async function setMatchRanking({
+  coupleId,
+  userId,
+  babyNameId,
+  rank,
+}: {
+  coupleId: string;
+  userId: string;
+  babyNameId: string;
+  rank: 1 | 2 | 3 | null;
+}) {
+  const [membership] = await getDb()
+    .select({ id: coupleMembers.id })
+    .from(coupleMembers)
+    .where(
+      and(
+        eq(coupleMembers.coupleId, coupleId),
+        eq(coupleMembers.userId, userId),
+        eq(coupleMembers.isActive, true),
+      ),
+    )
+    .limit(1);
+
+  if (!membership) {
+    throw new Error("You are not a member of this couple.");
+  }
+
+  const [match] = await getDb()
+    .select({ id: matches.id })
+    .from(matches)
+    .where(
+      and(eq(matches.coupleId, coupleId), eq(matches.babyNameId, babyNameId)),
+    )
+    .limit(1);
+
+  if (!match) {
+    throw new Error("You can only rank names on your shared match list.");
+  }
+
+  if (rank === null) {
+    await getDb()
+      .delete(matchRankings)
+      .where(
+        and(
+          eq(matchRankings.coupleId, coupleId),
+          eq(matchRankings.userId, userId),
+          eq(matchRankings.babyNameId, babyNameId),
+        ),
+      );
+    return { cleared: true as const };
+  }
+
+  if (rank < 1 || rank > 3) {
+    throw new Error("Rank must be 1, 2, or 3.");
+  }
+
+  await getDb().transaction(async (tx) => {
+    await tx
+      .delete(matchRankings)
+      .where(
+        and(
+          eq(matchRankings.coupleId, coupleId),
+          eq(matchRankings.userId, userId),
+          eq(matchRankings.rank, rank),
+        ),
+      );
+
+    await tx
+      .insert(matchRankings)
+      .values({
+        coupleId,
+        userId,
+        babyNameId,
+        rank,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [
+          matchRankings.coupleId,
+          matchRankings.userId,
+          matchRankings.babyNameId,
+        ],
+        set: { rank, updatedAt: new Date() },
+      });
+  });
+
+  return { rank };
 }
