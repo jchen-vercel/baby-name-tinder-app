@@ -6,12 +6,14 @@ import {
   MatchRankingControls,
   TopThreeSlots,
 } from "@/components/match-ranking-controls";
+import { PartnerProfileCard } from "@/components/partner-profile-card";
 import {
   ensureAppUser,
   getActiveCoupleForUser,
   getCoupleRankingContext,
   getMatchedNames,
 } from "@/lib/data";
+import { getPartnerProfile } from "@/lib/partner-profile";
 
 export default async function MatchesPage() {
   await auth.protect();
@@ -28,9 +30,10 @@ export default async function MatchesPage() {
     redirect("/onboarding");
   }
 
-  const [matches, rankingContext] = await Promise.all([
+  const [matches, rankingContext, partner] = await Promise.all([
     getMatchedNames(activeCouple.couple.id),
     getCoupleRankingContext(activeCouple.couple.id, appUser.id),
+    getPartnerProfile(activeCouple.couple.id, appUser.id),
   ]);
 
   const myRankByName = new Map(
@@ -64,12 +67,15 @@ export default async function MatchesPage() {
             </p>
           ) : null}
         </div>
-        <Link
-          href="/app"
-          className="btn-primary focus-ring-accent inline-flex justify-center rounded-lg px-5 py-3 text-center text-sm font-semibold"
-        >
-          Back to swiping
-        </Link>
+        <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end">
+          {partner ? <PartnerProfileCard partner={partner} /> : null}
+          <Link
+            href="/app"
+            className="btn-primary focus-ring-accent inline-flex justify-center rounded-lg px-5 py-3 text-center text-sm font-semibold"
+          >
+            Back to swiping
+          </Link>
+        </div>
       </div>
 
       {matches.length === 0 ? (

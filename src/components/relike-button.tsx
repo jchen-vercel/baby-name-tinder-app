@@ -51,7 +51,7 @@ export function RelikeButton({
   }
 
   return (
-    <div className="mt-6">
+    <div className="mt-auto w-full pt-6">
       <button
         type="button"
         onClick={() => void relike()}

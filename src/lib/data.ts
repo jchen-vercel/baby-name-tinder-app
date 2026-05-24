@@ -541,35 +541,33 @@ export async function setMatchRanking({
     throw new Error("Rank must be 1, 2, or 3.");
   }
 
-  await getDb().transaction(async (tx) => {
-    await tx
-      .delete(matchRankings)
-      .where(
-        and(
-          eq(matchRankings.coupleId, coupleId),
-          eq(matchRankings.userId, userId),
-          eq(matchRankings.rank, rank),
-        ),
-      );
+  await getDb()
+    .delete(matchRankings)
+    .where(
+      and(
+        eq(matchRankings.coupleId, coupleId),
+        eq(matchRankings.userId, userId),
+        eq(matchRankings.rank, rank),
+      ),
+    );
 
-    await tx
-      .insert(matchRankings)
-      .values({
-        coupleId,
-        userId,
-        babyNameId,
-        rank,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [
-          matchRankings.coupleId,
-          matchRankings.userId,
-          matchRankings.babyNameId,
-        ],
-        set: { rank, updatedAt: new Date() },
-      });
-  });
+  await getDb()
+    .insert(matchRankings)
+    .values({
+      coupleId,
+      userId,
+      babyNameId,
+      rank,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [
+        matchRankings.coupleId,
+        matchRankings.userId,
+        matchRankings.babyNameId,
+      ],
+      set: { rank, updatedAt: new Date() },
+    });
 
   return { rank };
 }

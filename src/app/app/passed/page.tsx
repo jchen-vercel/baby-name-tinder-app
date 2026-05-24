@@ -66,7 +66,7 @@ export default async function PassedPage() {
           {passedNames.map((passedName) => (
             <article
               key={passedName.id}
-              className="surface-card surface-card-glass rounded-2xl p-6 transition-transform duration-300 [transition-timing-function:var(--ease-expo-out)] hover:-translate-y-1"
+              className="surface-card surface-card-glass flex h-full flex-col rounded-2xl p-6 transition-transform duration-300 [transition-timing-function:var(--ease-expo-out)] hover:-translate-y-1"
             >
               <div className="flex items-center justify-between text-xs font-mono font-medium uppercase tracking-widest text-accent">
                 <span>{passedName.gender}</span>
