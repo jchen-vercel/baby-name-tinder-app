@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { OnboardingForm } from "@/components/onboarding-form";
 import { ensureAppUser, getActiveCoupleForUser } from "@/lib/data";
@@ -34,7 +35,15 @@ export default async function OnboardingPage() {
         </p>
       </div>
       <div className="mt-12">
-        <OnboardingForm />
+        <Suspense
+          fallback={
+            <div className="surface-card surface-card-glass mx-auto max-w-xl rounded-2xl p-8 text-center text-foreground-muted">
+              Loading setup…
+            </div>
+          }
+        >
+          <OnboardingForm />
+        </Suspense>
       </div>
     </main>
   );

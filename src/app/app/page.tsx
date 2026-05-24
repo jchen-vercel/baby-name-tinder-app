@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { InviteSharePanel } from "@/components/invite-share-panel";
 import { SwipeDeck } from "@/components/swipe-deck";
 import { ensureAppUser, getActiveCoupleForUser, getSwipeDeck } from "@/lib/data";
 
@@ -42,14 +43,7 @@ export default async function SwipePage() {
             parents like it.
           </p>
         </div>
-        <div className="rounded-2xl border border-border-accent bg-accent/5 px-5 py-4 shadow-[0_0_30px_rgba(94,106,210,0.08)]">
-          <p className="font-mono text-xs font-medium uppercase tracking-widest text-foreground-subtle">
-            Invite code
-          </p>
-          <p className="mt-2 text-2xl font-semibold tracking-[0.18em] text-foreground">
-            {activeCouple.couple.inviteCode}
-          </p>
-        </div>
+        <InviteSharePanel inviteCode={activeCouple.couple.inviteCode} />
       </div>
 
       <SwipeDeck coupleId={activeCouple.couple.id} initialNames={names} />

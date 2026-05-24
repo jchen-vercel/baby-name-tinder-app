@@ -10,6 +10,8 @@ names they both like.
    npm install
    ```
 2. Copy `.env.example` to `.env.local` (if present) and fill in Neon and Clerk values.
+   Optional: set `NEXT_PUBLIC_APP_URL` (e.g. `https://your-domain.com`) so invite
+   links copied from the app use a stable production URL.
 3. **AI chat (Vercel AI Gateway):** Enable AI Gateway for your Vercel project, then either:
    - run `vercel env pull .env.local` so `VERCEL_OIDC_TOKEN` is available locally, or
    - set `AI_GATEWAY_API_KEY` in `.env.local` for a static gateway key (e.g. CI).

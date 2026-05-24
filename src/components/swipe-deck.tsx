@@ -17,6 +17,10 @@ import {
 import { flushSync } from "react-dom";
 
 import { SpotlightSurface } from "@/components/spotlight-surface";
+import {
+  MatchCelebration,
+  type MatchCelebrationName,
+} from "@/components/match-celebration";
 
 /** Drag distance ( px ) past this on release counts as a swipe. */
 const SWIPE_OFFSET_PX = 100;
@@ -290,7 +294,9 @@ export function SwipeDeck({
   initialNames: SwipeDeckName[];
 }) {
   const [names, setNames] = useState(initialNames);
-  const [matchName, setMatchName] = useState<string | null>(null);
+  const [matchedName, setMatchedName] = useState<MatchCelebrationName | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [exitFlights, setExitFlights] = useState<ExitFlight[]>([]);
@@ -355,7 +361,7 @@ export function SwipeDeck({
       }
 
       if (payload.matched) {
-        setMatchName(payload.name ?? swipedName.name);
+        setMatchedName(swipedName);
       }
 
       if (deckLengthBeforeSwipe <= 4) {
@@ -376,7 +382,7 @@ export function SwipeDeck({
 
       flushSync(() => {
         setError(null);
-        setMatchName(null);
+        setMatchedName(null);
         setNames((existingNames) => {
           swiped = existingNames[0];
           deckLen = existingNames.length;
@@ -435,6 +441,13 @@ export function SwipeDeck({
 
   return (
     <section className="mx-auto w-full max-w-md">
+      {matchedName ? (
+        <MatchCelebration
+          name={matchedName}
+          onDismiss={() => setMatchedName(null)}
+        />
+      ) : null}
+
       <div className="mb-4 flex items-center justify-between px-2 text-sm font-medium text-[#aeb3be]">
         <span className="drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]">
           {remainingLabel}
@@ -443,12 +456,6 @@ export function SwipeDeck({
           ← Pass · Like →
         </span>
       </div>
-
-      {matchName ? (
-        <div className="mb-4 rounded-2xl border border-border-accent bg-accent/10 px-5 py-4 text-center font-semibold text-foreground shadow-[0_0_40px_rgba(94,106,210,0.12)]">
-          Match! You both liked {matchName}.
-        </div>
-      ) : null}
 
       {error ? (
         <div className="mb-4 rounded-2xl border border-red-500/35 bg-red-950/45 px-5 py-4 text-sm font-medium text-red-100">
